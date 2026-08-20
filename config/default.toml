@@ -1,0 +1,192 @@
+# matrix-rain: default configuration.
+# Copy to ~/.config/matrix-rain/config.toml and override only what you need —
+# user values are merged on top of these defaults, then [monitor.<name>]
+# sections on top of that, then CLI flags on top of everything.
+
+[display]
+# "standalone" — own fullscreen override-redirect windows (X11, any WM);
+# "embed" is selected automatically by --embed-window (xsecurelock).
+mode = "standalone"
+# Monitors to cover in standalone mode: "all" or a list of RandR names, e.g. ["DP2", "HDMI-1-0"].
+monitors = "all"
+# Frames per second cap (rain looks film-like around 30–60).
+fps = 60
+# Extra environment for renderer processes, e.g. { DRI_PRIME = "1" } to force the discrete GPU.
+env = {}
+
+[palette]
+# Name of one of the presets below, or "custom" to use [palette.custom].
+preset = "classic-green"
+# Cursor (leading raindrop glyph) color, RGB 0..1, and its intensity multiplier.
+cursor_color = [0.756, 1.0, 0.46]
+cursor_intensity = 2.0
+# Color of settled (decoded) headline text; the glow around phrases (bloom of the
+# text channel) automatically takes this color too. Default: dark orange.
+text_color = [0.85, 0.42, 0.05]
+text_intensity = 1.0
+# Background color added to every pixel.
+background_color = [0.0, 0.0, 0.0]
+# Random per-pixel dimming that hides gradient banding.
+dither_magnitude = 0.05
+
+# Presets are gradient stop lists: [position 0..1, r, g, b].
+# classic-green reproduces the film palette from Rezmason's config (HSL 0.3, 0.9).
+[palette.presets.classic-green]
+stops = [
+    [0.00, 0.000, 0.000, 0.000],
+    [0.20, 0.092, 0.380, 0.020],
+    [0.70, 0.538, 0.970, 0.430],
+    [0.80, 0.692, 0.980, 0.620],
+]
+
+[palette.presets.amber]
+stops = [
+    [0.00, 0.000, 0.000, 0.000],
+    [0.25, 0.180, 0.090, 0.000],
+    [0.60, 0.620, 0.330, 0.020],
+    [1.00, 1.000, 0.780, 0.290],
+]
+
+[palette.presets.ice-blue]
+stops = [
+    [0.00, 0.000, 0.000, 0.000],
+    [0.25, 0.020, 0.090, 0.180],
+    [0.60, 0.080, 0.380, 0.620],
+    [1.00, 0.560, 0.870, 1.000],
+]
+
+[palette.presets.red]
+stops = [
+    [0.00, 0.000, 0.000, 0.000],
+    [0.25, 0.160, 0.010, 0.010],
+    [0.60, 0.560, 0.060, 0.060],
+    [1.00, 1.000, 0.420, 0.380],
+]
+
+# Used when preset = "custom".
+[palette.custom]
+stops = [
+    [0.00, 0.000, 0.000, 0.000],
+    [1.00, 1.000, 1.000, 1.000],
+]
+
+# Rain simulation parameters (same model as Rezmason/matrix; defaults = "classic").
+[rain]
+# "horizontal": streams sweep left to right across all monitors (meanwhile-style);
+# "vertical": canonical falling code.
+direction = "horizontal"
+# Global rate that all animations progress.
+animation_speed = 1.0
+# Speed the raindrops fall (per-column speed varies around this).
+fall_speed = 0.3
+# Frequency/length of raindrops in a column (higher = longer, rarer drops).
+raindrop_length = 0.75
+# Speed at which background glyphs change to another random glyph.
+cycle_speed = 0.03
+# Minimum frames between glyph cycles (raise to make cycling chunkier).
+cycle_frame_skip = 1
+# Rate at which glyphs light up and dim (1 = instant).
+brightness_decay = 1.0
+# Glyph brightness/contrast before palette mapping.
+base_brightness = -0.5
+base_contrast = 1.1
+# Skip the initial "first drops on a blank screen" animation.
+skip_intro = false
+
+[bloom]
+# Bloom intensity 0..1 (0 disables the bloom pass entirely).
+strength = 0.7
+# Resolution scale of the blur pyramid (higher = sharper, more GPU).
+size = 0.4
+# Minimum brightness that still glows.
+high_pass_threshold = 0.1
+
+[glyphs]
+# Combined MSDF atlas and its metadata; built by atlas/build_atlas.py.
+atlas = "assets/atlas_combined.png"
+atlas_meta = "assets/atlas.json"
+# Rain draws random glyph indices in [0, rain_sequence_length): the original
+# matrix glyphs. Raise beyond 57 to let Cyrillic fall in the rain too.
+rain_sequence_length = 57
+# Grid cell size in screen pixels (effectively the font size).
+cell_size = 20
+
+[text]
+# Max cells per line. A headline longer than one line is broken into two balanced
+# lines at a word boundary; anything beyond two lines is trimmed with an ellipsis.
+# At cell_size 20 a 1920px monitor fits ~90 usable cells, so 72 leaves margins.
+max_length = 72
+# Seconds between headline appearances (random in range).
+interval_min = 4.0
+interval_max = 10.0
+# Reveal speed: cells decoded per second.
+reveal_rate = 20.0
+# How long a decoded headline stays on screen, seconds.
+dwell = 6.0
+# Erase speed: cells per second.
+erase_rate = 40.0
+# Brightness of settled headline glyphs (multiplies palette.text_color).
+brightness = 0.9
+# Brightness of the flickering "drawing head" (multiplies palette.cursor_color).
+scramble_brightness = 0.55
+# Brightness of the dim scramble left behind while erasing (rain palette position).
+fade_brightness = 0.3
+# Cells of flickering matrix "scramble" running ahead of the decoded text.
+scramble_width = 6
+# Max headlines on screen at once (per monitor).
+max_concurrent = 2
+
+# Headlines shown inside the rain come from a local SQLite database — ANY database
+# with a title column and a timestamp column (a news parser, an RSS fetcher, your
+# own notes). No database ships with this project and none is required.
+#
+# Leave db = "" to run on the fallback phrases below (default: works out of the box).
+# To use your own, point db at the file and name the columns:
+#
+#   db = "~/.local/share/matrix-rain/headlines.db"
+#   db_table = "posts"          # SELECT DISTINCT <title> FROM <table>
+#   db_title_column = "title"   #   WHERE <time> >= now - window_hours
+#   db_time_column = "created_at"
+#
+# The file is opened READ-ONLY and never written to. Rows with an empty timestamp
+# are ignored. Timestamps must be readable by SQLite's datetime() —
+# e.g. "2026-08-20 09:15:00" or an ISO-8601 string.
+[feed]
+db = ""
+# Only rows whose time column is set and within the last N hours.
+window_hours = 20
+# Re-run the query this often (the saver may run for hours; titles stay fresh).
+refresh_seconds = 3600
+db_table = "posts"
+db_title_column = "title"
+db_time_column = "created_at"
+# Timestamps are read as UTC; set true if your database stores local time.
+db_time_local = false
+# Titles matching any of these regexes (case-insensitive) are skipped — parser junk.
+exclude = ["^Error\\s*\\d"]
+# Shown when no database is configured, or it is empty/unreadable.
+fallback = [
+    "ПРОСНИСЬ",
+    "МАТРИЦА ПОВСЮДУ",
+    "СЛЕДУЙ ЗА БЕЛЫМ КРОЛИКОМ",
+    "ЛОЖКИ НЕ СУЩЕСТВУЕТ",
+    "ЗНАНИЕ ПУТИ И ПРОХОЖДЕНИЕ ЕГО - НЕ ОДНО И ТО ЖЕ",
+]
+
+# Password dialog for the xsecurelock locker (bin/matrix-lock). Authentication is
+# your real system password via PAM — nothing password-related is stored here.
+[lock]
+# Open the password dialog when the user starts typing; mouse motion never opens
+# it (the rain just keeps running). The first characters typed become the start of
+# the password. false = any wake-up (mouse included) opens the dialog immediately.
+#
+# Note: xsecurelock cannot forward the *waking* keystroke unless it is a printable
+# character, so the dialog opens on the first letter/digit typed, not on Esc — Esc
+# and other control keys are swallowed by xsecurelock before they can reach us.
+key_to_open = true
+# If no key is typed within this many seconds of a wake-up, return to the saver.
+idle_timeout = 45.0
+
+# Per-monitor overrides by RandR name (any key from [rain]/[glyphs]/[text]).
+# [monitor.DP2]
+# cell_size = 20

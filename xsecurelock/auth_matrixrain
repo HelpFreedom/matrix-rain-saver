@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Black Triangle and contributors. See LICENSE for terms.
+# xsecurelock AUTH module: draws the SYSTEM FAILURE dialog and authenticates via
+# the bundled authproto_pam helper (real PAM / system password).
+#
+# xsecurelock runs this with $XSCREENSAVER_WINDOW set and forwards keystrokes to
+# our stdin. Exit status 0 unlocks; anything else keeps the screen locked.
+#
+# xsecurelock discards our stderr, so a startup crash would be invisible. Redirect
+# stderr to a log so a Python traceback is recoverable if the dialog never appears.
+set -eu
+ROOT="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
+LOG="${MATRIXRAIN_AUTH_LOG:-${XDG_RUNTIME_DIR:-/tmp}/matrix-rain-auth.log}"
+mkdir -p "$(dirname "$LOG")" 2>/dev/null || true
+exec 2>>"$LOG"
+cd "$ROOT"
+export MATRIXRAIN_AUTH_LOG="$LOG"
+exec "$ROOT/.venv/bin/python" -m matrixrain.lock.run_auth

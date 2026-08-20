@@ -1,0 +1,22 @@
+# Виртуальное окружение и сборка (создаются install.sh)
+.venv
+build
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Ассеты: скачиваются fetch_assets.sh и генерируются build_atlas.py
+/assets/matrixcode_msdf.png
+/assets/atlas_combined.png
+/assets/atlas_preview.png
+/assets/atlas.json
+
+# Референсные исходники для диффа при портировании (скачиваются fetch_assets.sh)
+/vendor
+
+# Локальное
+/shots
+*.log
+.claude

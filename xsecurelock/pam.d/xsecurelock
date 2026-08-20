@@ -1,0 +1,8 @@
+# PAM service for the matrix-rain locker (authproto_pam).
+# Install to /etc/pam.d/xsecurelock:
+#   sudo install -m 644 xsecurelock/pam.d/xsecurelock /etc/pam.d/xsecurelock
+#
+# Delegates to the system's common auth stack — the SAME credentials as login,
+# so unlocking uses your real account password. Nothing here stores a password.
+@include common-auth
+@include common-account

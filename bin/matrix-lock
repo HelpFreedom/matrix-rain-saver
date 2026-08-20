@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Black Triangle and contributors. See LICENSE for terms.
+# Lock the screen with the Matrix rain saver and the SYSTEM FAILURE PAM dialog,
+# hosted by xsecurelock (grabs, crash-resistance, PAM all handled by vetted code).
+#
+# Usage:  bin/matrix-lock            # lock now
+#         bin/matrix-lock --daemon   # print the xss-lock command for idle auto-lock
+set -eu
+ROOT="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
+
+command -v xsecurelock >/dev/null || {
+    echo "xsecurelock not found — install it: sudo apt install xsecurelock xss-lock" >&2
+    exit 1
+}
+
+export XSECURELOCK_SAVER="$ROOT/xsecurelock/saver_matrixrain"
+export XSECURELOCK_AUTH="$ROOT/xsecurelock/auth_matrixrain"
+export XSECURELOCK_AUTHPROTO="authproto_pam"
+# Our AUTH module needs a PAM service file at /etc/pam.d/<name>.
+export XSECURELOCK_PAM_SERVICE="${XSECURELOCK_PAM_SERVICE:-xsecurelock}"
+# Per-monitor saver is automatic: the default global saver is a multiplexer that
+# runs XSECURELOCK_SAVER on every screen — no extra variable needed.
+# Do NOT reset the saver on auth close: reset is done via SIGUSR1, which our
+# renderer uses for its own pause protocol. Keep the rain running instead.
+export XSECURELOCK_SAVER_RESET_ON_AUTH_CLOSE=0
+# Forward the waking keystroke to our auth module so the first character the user
+# types opens the dialog and becomes the start of the password. xsecurelock only
+# forwards it when it is a PRINTABLE character (control keys, Esc included, are
+# always swallowed) — so our auth module opens on the first letter/digit typed and
+# ignores mouse motion. Without this, the first typed key would be lost too.
+export XSECURELOCK_DISCARD_FIRST_KEYPRESS=0
+# Show the saver immediately (no separate blank/auth background delay).
+export XSECURELOCK_BLANK_TIMEOUT="${XSECURELOCK_BLANK_TIMEOUT:--1}"
+# Pass a custom config through to both saver and auth if requested.
+[ -n "${MATRIXRAIN_CONFIG:-}" ] && export MATRIXRAIN_CONFIG
+
+# Print the command that auto-locks the screen on idle. We print THIS script rather
+# than an expanded "env VAR=... xsecurelock" line on purpose: every variable set above
+# matters (notably XSECURELOCK_DISCARD_FIRST_KEYPRESS, without which the first typed
+# key is swallowed), and an expanded line would silently drift out of sync with them.
+if [ "${1:-}" = "--daemon" ]; then
+    SELF="$(readlink -f "$0")"
+    echo "# 1. Blank/lock after 10 minutes of inactivity:"
+    echo "xset s 600"
+    echo
+    echo "# 2. Run the locker when that happens:"
+    echo "xss-lock -- '$SELF'"
+    echo
+    echo "Add both lines to your ~/.xinitrc, ~/.xprofile or WM autostart."
+    exit 0
+fi
+
+exec xsecurelock

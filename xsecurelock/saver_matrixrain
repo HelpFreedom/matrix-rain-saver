@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Black Triangle and contributors. See LICENSE for terms.
+# xsecurelock saver module: draws matrix rain into $XSCREENSAVER_WINDOW.
+# xsecurelock's saver_multiplex runs one instance of this per monitor and
+# SIGTERMs it on unlock.
+#
+# Install:
+#   export XSECURELOCK_SAVER="$(realpath "$(dirname "$0")")/saver_matrixrain"
+#   xsecurelock
+#
+# stderr goes to a log (xsecurelock discards it) so a saver that never appears
+# can be diagnosed.
+set -eu
+ROOT="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
+LOG="${MATRIXRAIN_SAVER_LOG:-${XDG_RUNTIME_DIR:-/tmp}/matrix-rain-saver.log}"
+mkdir -p "$(dirname "$LOG")" 2>/dev/null || true
+exec 2>>"$LOG"
+cd "$ROOT"
+CFG_ARG=()
+[ -n "${MATRIXRAIN_CONFIG:-}" ] && CFG_ARG=(--config "$MATRIXRAIN_CONFIG")
+exec "$ROOT/.venv/bin/python" -m matrixrain --embed-window "$XSCREENSAVER_WINDOW" "${CFG_ARG[@]}"
